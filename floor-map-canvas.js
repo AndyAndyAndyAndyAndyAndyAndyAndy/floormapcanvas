@@ -1,8 +1,11 @@
 class FloorMapCanvas extends HTMLElement {
   connectedCallback() {
-    this.innerHTML = `<h2 style="color: teal">Your Floor Map will render here!</h2>`;
-    // You can insert canvas/SVG/map logic here later
+    this.innerHTML = `
+      <div style="padding:10px; border:1px solid #ddd; background: #f8f8f8;">
+        Hello from Custom Element!
+      </div>
+    `;
   }
 }
 
-customElements.define('floor-map-canvas', FloorMapCanvas);
+customElements.define("floor-map-canvas", FloorMapCanvas);
