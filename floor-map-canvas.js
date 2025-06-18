@@ -6,7 +6,7 @@ class FloorMapCanvas extends HTMLElement {
 
   connectedCallback() {
     const canvas = document.createElement('canvas');
-    canvas.style.width = '100%';
+    canvas.style.width = '2000px';   // half of 4000
     canvas.style.height = 'auto';
     canvas.style.display = 'block';
     this.shadowRoot.appendChild(canvas);
@@ -40,10 +40,10 @@ class FloorMapCanvas extends HTMLElement {
 
     backgroundImage.onload = () => {
       function resizeAndDraw(highlightArea = null) {
-        const containerWidth = canvas.parentNode.clientWidth;
-        const aspectRatio = backgroundImage.height / backgroundImage.width;
-        canvas.width = containerWidth;
-        canvas.height = containerWidth * aspectRatio;
+        const scaleFactor = 0.5; // <-- shrink to half size
+
+        canvas.width = baseWidth * scaleFactor;
+        canvas.height = baseHeight * scaleFactor;
 
         const scaleX = canvas.width / baseWidth;
         const scaleY = canvas.height / baseHeight;
@@ -113,7 +113,6 @@ class FloorMapCanvas extends HTMLElement {
         }
       });
 
-      window.addEventListener('resize', () => resizeAndDraw());
       resizeAndDraw();
     };
   }
