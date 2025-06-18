@@ -2,6 +2,8 @@ class FloorMapCanvas extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
+    this.lastTapTime = 0;
+    this.lastTappedFloor = null;
   }
 
   connectedCallback() {
@@ -30,14 +32,17 @@ class FloorMapCanvas extends HTMLElement {
     const floors = [
       {
         name: 'Етаж 1',
+        link: 'https://www.amarisea.com/b-floor1',
         coords: [127,1209,417,1425,396,1450,399,1474,378,1485,636,1697,640,1732,823,1877,1209,1676,1467,1856,1732,1711,1813,1718,2548,1308,2714,1414,3103,1164,3438,1305,3770,1089,3831,1118,3862,1107,3958,1149,3958,1174,3990,1199,3997,1598,1626,2357,339,2359,0,1976,0,1262]
       },
       {
         name: 'Етаж 2',
+        link: 'https://www.amarisea.com/b-floor2',
         coords: [127,1199,424,1425,399,1439,375,1485,636,1693,647,1736,831,1880,1205,1672,1470,1849,1725,1711,1813,1714,2544,1298,2714,1404,3103,1160,3445,1291,3774,1072,3781,1019,3566,941,3587,800,3354,941,3004,796,2431,1107,2036,920,2028,1065,2067,1089,1343,1460,1000,1245,721,1372,67,909]
       },
       {
         name: 'Етаж 3',
+        link: 'https://www.amarisea.com/b-floor3',
         coords: [78,912,728,1378,1000,1244,1343,1463,2064,1089,2028,1068,2032,916,2424,1107,3011,792,3354,941,3576,799,3463,754,3463,686,2894,482,2940,457,2940,425,2831,386,2834,333,2170,104,1633,295,1633,415,1378,492,1308,506,1301,460,1011,323,145,609,170,799,180,838,142,862,142,884]
       }
     ];
@@ -106,10 +111,12 @@ class FloorMapCanvas extends HTMLElement {
     img.onload = draw;
     window.addEventListener('resize', draw);
 
-    canvas.addEventListener('mousemove', e => {
+    canvas.addEventListener('click', e => {
       const rect = canvas.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
+
+      let clickedFloor = null;
 
       floors.forEach(floor => {
         const poly = new Path2D();
@@ -119,8 +126,23 @@ class FloorMapCanvas extends HTMLElement {
           poly.lineTo(coords[i] * scale, coords[i + 1] * scale);
         }
         poly.closePath();
+
         floor.hovered = ctx.isPointInPath(poly, mouseX, mouseY);
+
+        if (floor.hovered) {
+          clickedFloor = floor;
+        }
       });
+
+      if (clickedFloor) {
+        const now = Date.now();
+        if (this.lastTappedFloor === clickedFloor && now - this.lastTapTime < 600) {
+          window.open(clickedFloor.link, '_self');
+        } else {
+          this.lastTappedFloor = clickedFloor;
+          this.lastTapTime = now;
+        }
+      }
 
       draw();
     });
