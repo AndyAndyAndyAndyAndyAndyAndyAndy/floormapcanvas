@@ -13,7 +13,6 @@ class FloorMapCanvas extends HTMLElement {
 
     const ctx = canvas.getContext('2d');
 
-    // Your floor areas as polygons (array of {coords, title, url})
     const areas = [
       {
         title: "1",
@@ -32,14 +31,17 @@ class FloorMapCanvas extends HTMLElement {
       }
     ];
 
+    const scaleX = canvas.width / 4000; // adjust if necessary
+    const scaleY = canvas.height / 2400;
+
     function drawMap() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       areas.forEach(area => {
         ctx.beginPath();
         const coords = area.coords;
         for (let i = 0; i < coords.length; i += 2) {
-          const x = coords[i] / 4; // scaling down (adjust to fit your canvas size)
-          const y = coords[i+1] / 4;
+          const x = coords[i] * scaleX;
+          const y = coords[i+1] * scaleY;
           if (i === 0) {
             ctx.moveTo(x, y);
           } else {
@@ -58,8 +60,8 @@ class FloorMapCanvas extends HTMLElement {
         ctx.beginPath();
         const coords = area.coords;
         for (let i = 0; i < coords.length; i += 2) {
-          const cx = coords[i] / 4;
-          const cy = coords[i+1] / 4;
+          const cx = coords[i] * scaleX;
+          const cy = coords[i+1] * scaleY;
           if (i === 0) {
             ctx.moveTo(cx, cy);
           } else {
@@ -67,4 +69,57 @@ class FloorMapCanvas extends HTMLElement {
           }
         }
         ctx.closePath();
-        if (c
+        if (ctx.isPointInPath(x, y)) {
+          return area;
+        }
+      }
+      return null;
+    }
+
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      drawMap();
+
+      const area = getAreaAt(x, y);
+      if (area) {
+        // Highlight hovered area
+        ctx.beginPath();
+        const coords = area.coords;
+        for (let i = 0; i < coords.length; i += 2) {
+          const cx = coords[i] * scaleX;
+          const cy = coords[i+1] * scaleY;
+          if (i === 0) {
+            ctx.moveTo(cx, cy);
+          } else {
+            ctx.lineTo(cx, cy);
+          }
+        }
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.35)';
+        ctx.fill();
+        ctx.stroke();
+
+        // Show title label
+        ctx.font = '16px sans-serif';
+        ctx.fillStyle = '#000';
+        ctx.fillText(`Floor ${area.title}`, x + 10, y - 10);
+      }
+    });
+
+    canvas.addEventListener('click', e => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const area = getAreaAt(x, y);
+      if (area) {
+        window.open(area.url, '_parent');
+      }
+    });
+
+    drawMap();
+  }
+}
+
+customElements.define('floor-map-canvas', FloorMapCanvas);
