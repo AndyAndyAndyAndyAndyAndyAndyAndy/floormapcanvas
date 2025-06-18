@@ -2,8 +2,6 @@ class FloorMapCanvas extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    this.lastTapTime = 0;
-    this.lastTappedFloor = null;
   }
 
   connectedCallback() {
@@ -70,7 +68,7 @@ class FloorMapCanvas extends HTMLElement {
         ctx.closePath();
 
         if (floor.hovered) {
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+          ctx.fillStyle = 'rgba(255, 0, 0, 0.4)'; // red highlight
           ctx.fill();
           activeText = floor.name;
         }
@@ -98,7 +96,7 @@ class FloorMapCanvas extends HTMLElement {
       ctx.lineTo(x, y + r);
       ctx.quadraticCurveTo(x, y, x + r, y);
       ctx.closePath();
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
       ctx.fill();
 
       ctx.font = `${28 * scale}px Montserrat, sans-serif`;
@@ -111,12 +109,29 @@ class FloorMapCanvas extends HTMLElement {
     img.onload = draw;
     window.addEventListener('resize', draw);
 
-    canvas.addEventListener('click', e => {
+    canvas.addEventListener('mousemove', e => {
       const rect = canvas.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
 
-      let clickedFloor = null;
+      floors.forEach(floor => {
+        const poly = new Path2D();
+        const coords = floor.coords;
+        poly.moveTo(coords[0] * scale, coords[1] * scale);
+        for (let i = 2; i < coords.length; i += 2) {
+          poly.lineTo(coords[i] * scale, coords[i + 1] * scale);
+        }
+        poly.closePath();
+        floor.hovered = ctx.isPointInPath(poly, mouseX, mouseY);
+      });
+
+      draw();
+    });
+
+    canvas.addEventListener('click', e => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
 
       floors.forEach(floor => {
         const poly = new Path2D();
@@ -127,24 +142,10 @@ class FloorMapCanvas extends HTMLElement {
         }
         poly.closePath();
 
-        floor.hovered = ctx.isPointInPath(poly, mouseX, mouseY);
-
-        if (floor.hovered) {
-          clickedFloor = floor;
+        if (ctx.isPointInPath(poly, mouseX, mouseY)) {
+          window.open(floor.link, '_self');
         }
       });
-
-      if (clickedFloor) {
-        const now = Date.now();
-        if (this.lastTappedFloor === clickedFloor && now - this.lastTapTime < 600) {
-          window.open(clickedFloor.link, '_self');
-        } else {
-          this.lastTappedFloor = clickedFloor;
-          this.lastTapTime = now;
-        }
-      }
-
-      draw();
     });
   }
 }
