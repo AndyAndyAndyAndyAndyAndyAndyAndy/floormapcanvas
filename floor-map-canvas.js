@@ -5,11 +5,18 @@ class FloorMapCanvas extends HTMLElement {
   }
 
   connectedCallback() {
+    const container = document.createElement('div');
+    container.style.width = '2000px';
+    container.style.height = '1181px';
+    container.style.position = 'relative';
+    container.style.overflow = 'hidden';
+
     const canvas = document.createElement('canvas');
-    canvas.style.width = '2000px';   // half of 4000
-    canvas.style.height = 'auto';
+    canvas.width = 2000;
+    canvas.height = 1181;
     canvas.style.display = 'block';
-    this.shadowRoot.appendChild(canvas);
+    container.appendChild(canvas);
+    this.shadowRoot.appendChild(container);
 
     const ctx = canvas.getContext('2d');
 
@@ -38,82 +45,77 @@ class FloorMapCanvas extends HTMLElement {
     const baseWidth = 4000;
     const baseHeight = 2400;
 
+    function draw(highlightArea = null) {
+      const scaleX = canvas.width / baseWidth;
+      const scaleY = canvas.height / baseHeight;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+
+      areas.forEach(area => {
+        ctx.beginPath();
+        const coords = area.coords;
+        for (let i = 0; i < coords.length; i += 2) {
+          const x = coords[i] * scaleX;
+          const y = coords[i + 1] * scaleY;
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.closePath();
+        ctx.fillStyle = (highlightArea === area) ? 'rgba(255,0,0,0.3)' : 'rgba(200,200,200,0.2)';
+        ctx.fill();
+        ctx.strokeStyle = '#555';
+        ctx.stroke();
+      });
+    }
+
+    function getAreaAt(x, y) {
+      const scaleX = canvas.width / baseWidth;
+      const scaleY = canvas.height / baseHeight;
+      for (let area of areas) {
+        ctx.beginPath();
+        const coords = area.coords;
+        for (let i = 0; i < coords.length; i += 2) {
+          const cx = coords[i] * scaleX;
+          const cy = coords[i + 1] * scaleY;
+          if (i === 0) {
+            ctx.moveTo(cx, cy);
+          } else {
+            ctx.lineTo(cx, cy);
+          }
+        }
+        ctx.closePath();
+        if (ctx.isPointInPath(x, y)) {
+          return area;
+        }
+      }
+      return null;
+    }
+
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const area = getAreaAt(x, y);
+      draw(area);
+      canvas.title = area ? `Floor ${area.title}` : '';
+    });
+
+    canvas.addEventListener('click', e => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const area = getAreaAt(x, y);
+      if (area) {
+        window.open(area.url, '_parent');
+      }
+    });
+
     backgroundImage.onload = () => {
-      function resizeAndDraw(highlightArea = null) {
-        const scaleFactor = 0.5; // <-- shrink to half size
-
-        canvas.width = baseWidth * scaleFactor;
-        canvas.height = baseHeight * scaleFactor;
-
-        const scaleX = canvas.width / baseWidth;
-        const scaleY = canvas.height / baseHeight;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
-
-        areas.forEach(area => {
-          ctx.beginPath();
-          const coords = area.coords;
-          for (let i = 0; i < coords.length; i += 2) {
-            const x = coords[i] * scaleX;
-            const y = coords[i + 1] * scaleY;
-            if (i === 0) {
-              ctx.moveTo(x, y);
-            } else {
-              ctx.lineTo(x, y);
-            }
-          }
-          ctx.closePath();
-          ctx.fillStyle = (highlightArea === area) ? 'rgba(255,0,0,0.3)' : 'rgba(200,200,200,0.2)';
-          ctx.fill();
-          ctx.strokeStyle = '#555';
-          ctx.stroke();
-        });
-      }
-
-      function getAreaAt(x, y) {
-        const scaleX = canvas.width / baseWidth;
-        const scaleY = canvas.height / baseHeight;
-        for (let area of areas) {
-          ctx.beginPath();
-          const coords = area.coords;
-          for (let i = 0; i < coords.length; i += 2) {
-            const cx = coords[i] * scaleX;
-            const cy = coords[i + 1] * scaleY;
-            if (i === 0) {
-              ctx.moveTo(cx, cy);
-            } else {
-              ctx.lineTo(cx, cy);
-            }
-          }
-          ctx.closePath();
-          if (ctx.isPointInPath(x, y)) {
-            return area;
-          }
-        }
-        return null;
-      }
-
-      canvas.addEventListener('mousemove', e => {
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const area = getAreaAt(x, y);
-        resizeAndDraw(area);
-        canvas.title = area ? `Floor ${area.title}` : '';
-      });
-
-      canvas.addEventListener('click', e => {
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const area = getAreaAt(x, y);
-        if (area) {
-          window.open(area.url, '_parent');
-        }
-      });
-
-      resizeAndDraw();
+      draw();
     };
   }
 }
