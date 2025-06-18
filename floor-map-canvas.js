@@ -5,18 +5,23 @@ class FloorMapCanvas extends HTMLElement {
   }
 
   connectedCallback() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 2000;
-    canvas.height = 1181;
-
     const container = document.createElement('div');
     container.style.position = 'relative';
-    container.style.width = '2000px';
-    container.style.height = '1181px';
-    container.appendChild(canvas);
+    container.style.width = '100%';
+    container.style.height = '100%';
     this.shadowRoot.appendChild(container);
 
+    const canvas = document.createElement('canvas');
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.display = 'block';
+    container.appendChild(canvas);
+
     const ctx = canvas.getContext('2d');
+
+    const originalWidth = 2000;
+    const originalHeight = 1181;
+
     const img = new Image();
     img.src = 'https://static.wixstatic.com/media/d32b49_98fcdb8d36d54b8081a2bc559c875ccb~mv2.jpg';
 
@@ -35,25 +40,35 @@ class FloorMapCanvas extends HTMLElement {
       }
     ];
 
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, 2000, 1181);
+    let scaleX = 1;
+    let scaleY = 1;
+    let labelText = 'Посочете етаж';
 
-      let labelText = 'Посочете етаж';
+    const draw = () => {
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+
+      scaleX = canvas.width / originalWidth;
+      scaleY = canvas.height / originalHeight;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      let activeText = 'Посочете етаж';
 
       floors.forEach(floor => {
         ctx.beginPath();
         const coords = floor.coords;
-        ctx.moveTo(coords[0], coords[1]);
+        ctx.moveTo(coords[0] * scaleX, coords[1] * scaleY);
         for (let i = 2; i < coords.length; i += 2) {
-          ctx.lineTo(coords[i], coords[i + 1]);
+          ctx.lineTo(coords[i] * scaleX, coords[i + 1] * scaleY);
         }
         ctx.closePath();
 
         if (floor.hovered) {
           ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
           ctx.fill();
-          labelText = floor.name;
+          activeText = floor.name;
         }
 
         ctx.lineWidth = 2;
@@ -61,15 +76,15 @@ class FloorMapCanvas extends HTMLElement {
         ctx.stroke();
       });
 
-      // Label box in top-right corner
-      const padding = 20;
-      const boxWidth = 260;
-      const boxHeight = 70;
+      // Label box
+      const padding = 20 * scaleX;
+      const boxWidth = 260 * scaleX;
+      const boxHeight = 70 * scaleY;
       const x = canvas.width - boxWidth - padding;
       const y = padding;
 
       ctx.beginPath();
-      const r = 20;
+      const r = 20 * scaleX;
       ctx.moveTo(x + r, y);
       ctx.lineTo(x + boxWidth - r, y);
       ctx.quadraticCurveTo(x + boxWidth, y, x + boxWidth, y + r);
@@ -83,14 +98,15 @@ class FloorMapCanvas extends HTMLElement {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
       ctx.fill();
 
-      ctx.font = `28px Montserrat, sans-serif`;
+      ctx.font = `${28 * scaleX}px Montserrat, sans-serif`;
       ctx.fillStyle = 'white';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(labelText, x + boxWidth / 2, y + boxHeight / 2);
+      ctx.fillText(activeText, x + boxWidth / 2, y + boxHeight / 2);
     };
 
     img.onload = draw;
+    window.addEventListener('resize', draw);
 
     canvas.addEventListener('mousemove', e => {
       const rect = canvas.getBoundingClientRect();
@@ -100,9 +116,9 @@ class FloorMapCanvas extends HTMLElement {
       floors.forEach(floor => {
         const poly = new Path2D();
         const coords = floor.coords;
-        poly.moveTo(coords[0], coords[1]);
+        poly.moveTo(coords[0] * scaleX, coords[1] * scaleY);
         for (let i = 2; i < coords.length; i += 2) {
-          poly.lineTo(coords[i], coords[i + 1]);
+          poly.lineTo(coords[i] * scaleX, coords[i + 1] * scaleY);
         }
         poly.closePath();
         floor.hovered = ctx.isPointInPath(poly, mouseX, mouseY);
