@@ -8,12 +8,14 @@ class FloorMapCanvas extends HTMLElement {
     const container = document.createElement('div');
     container.style.position = 'relative';
     container.style.width = '100%';
-    container.style.height = '100%';
+    container.style.maxWidth = '2000px';
+    container.style.margin = '0 auto';
+    container.style.aspectRatio = '2000 / 1181';
     this.shadowRoot.appendChild(container);
 
     const canvas = document.createElement('canvas');
     canvas.style.width = '100%';
-    canvas.style.height = '100%';
+    canvas.style.height = 'auto';
     canvas.style.display = 'block';
     container.appendChild(canvas);
 
@@ -26,30 +28,18 @@ class FloorMapCanvas extends HTMLElement {
     img.src = 'https://static.wixstatic.com/media/d32b49_98fcdb8d36d54b8081a2bc559c875ccb~mv2.jpg';
 
     const floors = [
-      {
-        name: 'Етаж 1',
-        coords: [127,1209,417,1425,396,1450,399,1474,378,1485,636,1697,640,1732,823,1877,1209,1676,1467,1856,1732,1711,1813,1718,2548,1308,2714,1414,3103,1164,3438,1305,3770,1089,3831,1118,3862,1107,3958,1149,3958,1174,3990,1199,3997,1598,1626,2357,339,2359,0,1976,0,1262],
-      },
-      {
-        name: 'Етаж 2',
-        coords: [127,1199,424,1425,399,1439,375,1485,636,1693,647,1736,831,1880,1205,1672,1470,1849,1725,1711,1813,1714,2544,1298,2714,1404,3103,1160,3445,1291,3774,1072,3781,1019,3566,941,3587,800,3354,941,3004,796,2431,1107,2036,920,2028,1065,2067,1089,1343,1460,1000,1245,721,1372,67,909],
-      },
-      {
-        name: 'Етаж 3',
-        coords: [78,912,728,1378,1000,1244,1343,1463,2064,1089,2028,1068,2032,916,2424,1107,3011,792,3354,941,3576,799,3463,754,3463,686,2894,482,2940,457,2940,425,2831,386,2834,333,2170,104,1633,295,1633,415,1378,492,1308,506,1301,460,1011,323,145,609,170,799,180,838,142,862,142,884],
-      }
+      { name: 'Етаж 1', coords: [127,1209,417,1425,396,1450,399,1474,378,1485,636,1697,640,1732,823,1877,1209,1676,1467,1856,1732,1711,1813,1718,2548,1308,2714,1414,3103,1164,3438,1305,3770,1089,3831,1118,3862,1107,3958,1149,3958,1174,3990,1199,3997,1598,1626,2357,339,2359,0,1976,0,1262] },
+      { name: 'Етаж 2', coords: [127,1199,424,1425,399,1439,375,1485,636,1693,647,1736,831,1880,1205,1672,1470,1849,1725,1711,1813,1714,2544,1298,2714,1404,3103,1160,3445,1291,3774,1072,3781,1019,3566,941,3587,800,3354,941,3004,796,2431,1107,2036,920,2028,1065,2067,1089,1343,1460,1000,1245,721,1372,67,909] },
+      { name: 'Етаж 3', coords: [78,912,728,1378,1000,1244,1343,1463,2064,1089,2028,1068,2032,916,2424,1107,3011,792,3354,941,3576,799,3463,754,3463,686,2894,482,2940,457,2940,425,2831,386,2834,333,2170,104,1633,295,1633,415,1378,492,1308,506,1301,460,1011,323,145,609,170,799,180,838,142,862,142,884] }
     ];
 
-    let scaleX = 1;
-    let scaleY = 1;
-    let labelText = 'Посочете етаж';
+    let scale = 1;
 
     const draw = () => {
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight;
-
-      scaleX = canvas.width / originalWidth;
-      scaleY = canvas.height / originalHeight;
+      const displayWidth = container.clientWidth;
+      scale = displayWidth / originalWidth;
+      canvas.width = displayWidth;
+      canvas.height = originalHeight * scale;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -59,9 +49,9 @@ class FloorMapCanvas extends HTMLElement {
       floors.forEach(floor => {
         ctx.beginPath();
         const coords = floor.coords;
-        ctx.moveTo(coords[0] * scaleX, coords[1] * scaleY);
+        ctx.moveTo(coords[0] * scale, coords[1] * scale);
         for (let i = 2; i < coords.length; i += 2) {
-          ctx.lineTo(coords[i] * scaleX, coords[i + 1] * scaleY);
+          ctx.lineTo(coords[i] * scale, coords[i + 1] * scale);
         }
         ctx.closePath();
 
@@ -76,15 +66,14 @@ class FloorMapCanvas extends HTMLElement {
         ctx.stroke();
       });
 
-      // Label box
-      const padding = 20 * scaleX;
-      const boxWidth = 260 * scaleX;
-      const boxHeight = 70 * scaleY;
+      const padding = 20 * scale;
+      const boxWidth = 280 * scale;
+      const boxHeight = 70 * scale;
       const x = canvas.width - boxWidth - padding;
       const y = padding;
 
       ctx.beginPath();
-      const r = 20 * scaleX;
+      const r = 20 * scale;
       ctx.moveTo(x + r, y);
       ctx.lineTo(x + boxWidth - r, y);
       ctx.quadraticCurveTo(x + boxWidth, y, x + boxWidth, y + r);
@@ -98,7 +87,7 @@ class FloorMapCanvas extends HTMLElement {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
       ctx.fill();
 
-      ctx.font = `${28 * scaleX}px Montserrat, sans-serif`;
+      ctx.font = `${28 * scale}px Montserrat, sans-serif`;
       ctx.fillStyle = 'white';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -116,9 +105,9 @@ class FloorMapCanvas extends HTMLElement {
       floors.forEach(floor => {
         const poly = new Path2D();
         const coords = floor.coords;
-        poly.moveTo(coords[0] * scaleX, coords[1] * scaleY);
+        poly.moveTo(coords[0] * scale, coords[1] * scale);
         for (let i = 2; i < coords.length; i += 2) {
-          poly.lineTo(coords[i] * scaleX, coords[i + 1] * scaleY);
+          poly.lineTo(coords[i] * scale, coords[i + 1] * scale);
         }
         poly.closePath();
         floor.hovered = ctx.isPointInPath(poly, mouseX, mouseY);
