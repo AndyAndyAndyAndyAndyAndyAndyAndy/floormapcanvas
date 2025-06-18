@@ -6,10 +6,13 @@ class FloorMapCanvas extends HTMLElement {
 
   connectedCallback() {
     const canvas = document.createElement('canvas');
+    canvas.width = 2000;
+    canvas.height = 1181;
+
     const container = document.createElement('div');
     container.style.position = 'relative';
-    container.style.width = '100%';
-    container.style.height = '100%';
+    container.style.width = '2000px';
+    container.style.height = '1181px';
     container.appendChild(canvas);
     this.shadowRoot.appendChild(container);
 
@@ -33,24 +36,17 @@ class FloorMapCanvas extends HTMLElement {
     ];
 
     const draw = () => {
-      canvas.width = this.clientWidth;
-      canvas.height = this.clientHeight;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const scaleX = canvas.width / 2000;
-      const scaleY = canvas.height / 1181;
-
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, 2000, 1181);
 
       let labelText = 'Посочете етаж';
 
-      // Draw floor shapes and check hover states
       floors.forEach(floor => {
         ctx.beginPath();
         const coords = floor.coords;
-        ctx.moveTo(coords[0] * scaleX, coords[1] * scaleY);
+        ctx.moveTo(coords[0], coords[1]);
         for (let i = 2; i < coords.length; i += 2) {
-          ctx.lineTo(coords[i] * scaleX, coords[i + 1] * scaleY);
+          ctx.lineTo(coords[i], coords[i + 1]);
         }
         ctx.closePath();
 
@@ -65,16 +61,15 @@ class FloorMapCanvas extends HTMLElement {
         ctx.stroke();
       });
 
-      // Draw label box in top-right corner
-      const padding = 20 * scaleX;
-      const boxWidth = 260 * scaleX;
-      const boxHeight = 70 * scaleY;
+      // Label box in top-right corner
+      const padding = 20;
+      const boxWidth = 260;
+      const boxHeight = 70;
       const x = canvas.width - boxWidth - padding;
       const y = padding;
 
-      // Draw rounded rectangle
       ctx.beginPath();
-      const r = 20 * scaleX;
+      const r = 20;
       ctx.moveTo(x + r, y);
       ctx.lineTo(x + boxWidth - r, y);
       ctx.quadraticCurveTo(x + boxWidth, y, x + boxWidth, y + r);
@@ -88,8 +83,7 @@ class FloorMapCanvas extends HTMLElement {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
       ctx.fill();
 
-      // Draw text inside label box
-      ctx.font = `${Math.round(28 * scaleX)}px Montserrat, sans-serif`;
+      ctx.font = `28px Montserrat, sans-serif`;
       ctx.fillStyle = 'white';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -97,13 +91,11 @@ class FloorMapCanvas extends HTMLElement {
     };
 
     img.onload = draw;
-    window.addEventListener('resize', draw);
 
-    // Mouse move listener for hover detection
     canvas.addEventListener('mousemove', e => {
       const rect = canvas.getBoundingClientRect();
-      const mouseX = (e.clientX - rect.left) / (canvas.width / 2000);
-      const mouseY = (e.clientY - rect.top) / (canvas.height / 1181);
+      const mouseX = (e.clientX - rect.left);
+      const mouseY = (e.clientY - rect.top);
 
       floors.forEach(floor => {
         const poly = new Path2D();
