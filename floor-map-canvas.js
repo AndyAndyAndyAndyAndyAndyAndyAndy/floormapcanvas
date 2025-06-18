@@ -13,6 +13,12 @@ class FloorMapCanvas extends HTMLElement {
 
     const ctx = canvas.getContext('2d');
 
+    // Load background image
+    const backgroundImage = new Image();
+    backgroundImage.crossOrigin = "anonymous";
+    backgroundImage.src = 'https://static.wixstatic.com/media/d32b49_98fcdb8d36d54b8081a2bc559c875ccb~mv2.jpg';
+
+    // Floor polygons
     const areas = [
       {
         title: "1",
@@ -31,17 +37,19 @@ class FloorMapCanvas extends HTMLElement {
       }
     ];
 
-    const scaleX = canvas.width / 4000; // adjust if necessary
+    const scaleX = canvas.width / 4000;
     const scaleY = canvas.height / 2400;
 
-    function drawMap() {
+    function drawMap(highlightArea = null) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+
       areas.forEach(area => {
         ctx.beginPath();
         const coords = area.coords;
         for (let i = 0; i < coords.length; i += 2) {
           const x = coords[i] * scaleX;
-          const y = coords[i+1] * scaleY;
+          const y = coords[i + 1] * scaleY;
           if (i === 0) {
             ctx.moveTo(x, y);
           } else {
@@ -49,8 +57,9 @@ class FloorMapCanvas extends HTMLElement {
           }
         }
         ctx.closePath();
-        ctx.fillStyle = '#cccccc';
+        ctx.fillStyle = (highlightArea === area) ? 'rgba(255,0,0,0.3)' : 'rgba(200,200,200,0.25)';
         ctx.fill();
+        ctx.strokeStyle = '#555';
         ctx.stroke();
       });
     }
@@ -61,7 +70,7 @@ class FloorMapCanvas extends HTMLElement {
         const coords = area.coords;
         for (let i = 0; i < coords.length; i += 2) {
           const cx = coords[i] * scaleX;
-          const cy = coords[i+1] * scaleY;
+          const cy = coords[i + 1] * scaleY;
           if (i === 0) {
             ctx.moveTo(cx, cy);
           } else {
@@ -76,35 +85,21 @@ class FloorMapCanvas extends HTMLElement {
       return null;
     }
 
+    backgroundImage.onload = () => {
+      drawMap();
+    };
+
     canvas.addEventListener('mousemove', e => {
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      drawMap();
-
       const area = getAreaAt(x, y);
-      if (area) {
-        // Highlight hovered area
-        ctx.beginPath();
-        const coords = area.coords;
-        for (let i = 0; i < coords.length; i += 2) {
-          const cx = coords[i] * scaleX;
-          const cy = coords[i+1] * scaleY;
-          if (i === 0) {
-            ctx.moveTo(cx, cy);
-          } else {
-            ctx.lineTo(cx, cy);
-          }
-        }
-        ctx.closePath();
-        ctx.fillStyle = 'rgba(255, 0, 0, 0.35)';
-        ctx.fill();
-        ctx.stroke();
+      drawMap(area);
 
-        // Show title label
-        ctx.font = '16px sans-serif';
-        ctx.fillStyle = '#000';
-        ctx.fillText(`Floor ${area.title}`, x + 10, y - 10);
+      if (area) {
+        canvas.title = `Floor ${area.title}`;
+      } else {
+        canvas.title = '';
       }
     });
 
@@ -117,9 +112,8 @@ class FloorMapCanvas extends HTMLElement {
         window.open(area.url, '_parent');
       }
     });
-
-    drawMap();
   }
 }
 
+// Register the custom element
 customElements.define('floor-map-canvas', FloorMapCanvas);
