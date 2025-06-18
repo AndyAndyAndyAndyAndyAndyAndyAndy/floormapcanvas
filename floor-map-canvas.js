@@ -6,17 +6,17 @@ class FloorMapCanvas extends HTMLElement {
 
   connectedCallback() {
     const canvas = document.createElement('canvas');
-    canvas.style.border = '1px solid #ccc';
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+    canvas.style.display = 'block';
     this.shadowRoot.appendChild(canvas);
 
     const ctx = canvas.getContext('2d');
 
-    // Load background image
     const backgroundImage = new Image();
     backgroundImage.crossOrigin = "anonymous";
     backgroundImage.src = 'https://static.wixstatic.com/media/d32b49_98fcdb8d36d54b8081a2bc559c875ccb~mv2.jpg';
 
-    // Floor polygons
     const areas = [
       {
         title: "1",
@@ -35,14 +35,19 @@ class FloorMapCanvas extends HTMLElement {
       }
     ];
 
-    // Draw function after image is loaded
-    backgroundImage.onload = () => {
-      canvas.width = backgroundImage.width;
-      canvas.height = backgroundImage.height;
-      const scaleX = canvas.width / 4000;
-      const scaleY = canvas.height / 2400;
+    const baseWidth = 4000;
+    const baseHeight = 2400;
 
-      function drawMap(highlightArea = null) {
+    backgroundImage.onload = () => {
+      function resizeAndDraw(highlightArea = null) {
+        const containerWidth = canvas.parentNode.clientWidth;
+        const aspectRatio = backgroundImage.height / backgroundImage.width;
+        canvas.width = containerWidth;
+        canvas.height = containerWidth * aspectRatio;
+
+        const scaleX = canvas.width / baseWidth;
+        const scaleY = canvas.height / baseHeight;
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
 
@@ -59,7 +64,7 @@ class FloorMapCanvas extends HTMLElement {
             }
           }
           ctx.closePath();
-          ctx.fillStyle = (highlightArea === area) ? 'rgba(255,0,0,0.3)' : 'rgba(200,200,200,0.25)';
+          ctx.fillStyle = (highlightArea === area) ? 'rgba(255,0,0,0.3)' : 'rgba(200,200,200,0.2)';
           ctx.fill();
           ctx.strokeStyle = '#555';
           ctx.stroke();
@@ -67,6 +72,8 @@ class FloorMapCanvas extends HTMLElement {
       }
 
       function getAreaAt(x, y) {
+        const scaleX = canvas.width / baseWidth;
+        const scaleY = canvas.height / baseHeight;
         for (let area of areas) {
           ctx.beginPath();
           const coords = area.coords;
@@ -87,14 +94,12 @@ class FloorMapCanvas extends HTMLElement {
         return null;
       }
 
-      drawMap();
-
       canvas.addEventListener('mousemove', e => {
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const area = getAreaAt(x, y);
-        drawMap(area);
+        resizeAndDraw(area);
         canvas.title = area ? `Floor ${area.title}` : '';
       });
 
@@ -107,9 +112,11 @@ class FloorMapCanvas extends HTMLElement {
           window.open(area.url, '_parent');
         }
       });
+
+      window.addEventListener('resize', () => resizeAndDraw());
+      resizeAndDraw();
     };
   }
 }
 
-// Register the custom element
 customElements.define('floor-map-canvas', FloorMapCanvas);
